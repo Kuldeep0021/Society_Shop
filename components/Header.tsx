@@ -1,0 +1,110 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { ShoppingBasket, ShoppingCart, User, LayoutDashboard, LogOut } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+
+export default function Header() {
+  const pathname = usePathname();
+  const { totalItems } = useCart();
+  const { user, isAdmin, logout } = useAuth();
+
+  const isAdminPage = pathname?.startsWith('/admin');
+
+  return (
+    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <Link href="/" className="flex items-center gap-2 font-bold text-lg">
+          <ShoppingBasket className="h-6 w-6 text-emerald-600" />
+          <span className="hidden sm:inline">Society Store</span>
+        </Link>
+
+        <nav className="flex items-center gap-1 sm:gap-2">
+          {isAdminPage && (
+            <>
+              <NavLink href="/admin" label="Dashboard" active={pathname === '/admin'} />
+              <NavLink href="/admin/products" label="Products" active={pathname === '/admin/products'} />
+              <NavLink href="/admin/orders" label="Orders" active={pathname === '/admin/orders'} />
+              <NavLink href="/admin/delivery" label="Delivery" active={pathname === '/admin/delivery'} />
+              <NavLink href="/admin/slots" label="Slots" active={pathname === '/admin/slots'} />
+            </>
+          )}
+
+          <Link href="/cart" className="relative">
+            <Button variant="ghost" size="icon" aria-label="Cart">
+              <ShoppingCart className="h-5 w-5" />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-emerald-600 px-1 text-xs font-bold text-white">
+                  {totalItems}
+                </span>
+              )}
+            </Button>
+          </Link>
+
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Account">
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{user.name}</span>
+                    <span className="text-xs text-muted-foreground">{user.phone}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin">
+                      <LayoutDashboard className="mr-2 h-4 w-4" /> Admin Panel
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem asChild>
+                  <Link href="/orders">My Orders</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => logout()}>
+                  <LogOut className="mr-2 h-4 w-4" /> Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+              <Link href="/login">Login</Link>
+            </Button>
+          )}
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+function NavLink({ href, label, active }: { href: string; label: string; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={`hidden md:inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+        active
+          ? 'bg-emerald-50 text-emerald-700'
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
