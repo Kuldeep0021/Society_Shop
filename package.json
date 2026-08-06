@@ -48,17 +48,20 @@
     "@types/react": "18.2.22",
     "@types/react-dom": "18.2.7",
     "autoprefixer": "10.4.15",
+    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.0",
+    "cloudinary": "^2.10.0",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
     "eslint": "8.49.0",
     "eslint-config-next": "13.5.1",
-    "firebase": "^10.14.1",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.446.0",
+    "mongoose": "^9.9.1",
     "next": "13.5.1",
+    "next-auth": "^4.24.15",
     "next-themes": "^0.3.0",
     "nodemailer": "^9.0.4",
     "postcss": "8.4.30",
@@ -79,6 +82,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/nodemailer": "^8.0.1"
   }
 }

@@ -1,37 +1,52 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lock, Loader2 } from 'lucide-react';
+import { Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { signIn } from 'next-auth/react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const { loginWithEmail, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // If already logged in and admin, redirect
-  if (isAdmin) {
-    router.push('/admin/orders');
-    return null;
-  }
+  useEffect(() => {
+    if (isAdmin) {
+      router.push('/admin/orders');
+    }
+  }, [isAdmin, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
     try {
-      await loginWithEmail(email, password);
-      toast.success('Logged in successfully');
-      router.push('/admin/orders');
+      const res = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+        isRegister: 'false',
+      });
+
+      if (res?.error) {
+        toast.error(res.error);
+      } else {
+        toast.success('Logged in successfully');
+        router.push('/admin/orders');
+        router.refresh();
+      }
     } catch (err: any) {
-      toast.error(err?.message || 'Invalid email or password');
+      toast.error('Authentication failed');
     } finally {
       setLoading(false);
     }
@@ -56,7 +71,7 @@ export default function AdminLoginPage() {
             <Input
               id="email"
               type="email"
-              placeholder="admin@example.com"
+              placeholder="admin@societystore.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -64,14 +79,23 @@ export default function AdminLoginPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
           <Button
             type="submit"

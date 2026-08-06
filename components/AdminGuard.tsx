@@ -1,48 +1,33 @@
 'use client';
 
-import { ReactNode } from 'react';
-import Link from 'next/link';
-import { Lock, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
-export default function AdminGuard({ children }: { children: ReactNode }) {
-  const { user, loading, isAdmin } = useAuth();
+export default function AdminGuard({ children }: { children: React.ReactNode }) {
+  const { isAdmin, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !isAdmin) {
+      router.replace('/admin/login');
+    }
+  }, [loading, isAdmin, router]);
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-20 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-20 max-w-md text-center">
-        <Lock className="h-14 w-14 mx-auto text-muted-foreground/50" />
-        <h1 className="text-2xl font-bold mt-4">Admin Login Required</h1>
-        <p className="text-muted-foreground mt-2">Please login with an admin account.</p>
-        <Button asChild className="mt-6 bg-emerald-600 hover:bg-emerald-700">
-          <Link href="/admin/login">Login</Link>
-        </Button>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+          <p className="text-sm text-slate-500 font-medium">Loading...</p>
+        </div>
       </div>
     );
   }
 
   if (!isAdmin) {
-    return (
-      <div className="container mx-auto px-4 py-20 max-w-md text-center">
-        <Lock className="h-14 w-14 mx-auto text-muted-foreground/50" />
-        <h1 className="text-2xl font-bold mt-4">Access Denied</h1>
-        <p className="text-muted-foreground mt-2">
-          You do not have admin access. Contact the shop owner.
-        </p>
-        <Button asChild className="mt-6">
-          <Link href="/">Back to Store</Link>
-        </Button>
-      </div>
-    );
+    return null;
   }
 
   return <>{children}</>;
