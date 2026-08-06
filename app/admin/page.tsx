@@ -10,6 +10,7 @@ import {
   TrendingUp,
   ShoppingCart,
   ArrowRight,
+  Settings,
 } from 'lucide-react';
 import AdminGuard from '@/components/AdminGuard';
 import { Card } from '@/components/ui/card';
@@ -79,6 +80,7 @@ function DashboardContent() {
     { href: '/admin/orders', label: 'Manage Orders', icon: ShoppingCart, desc: 'Update order status' },
     { href: '/admin/delivery', label: 'Delivery', icon: Truck, desc: 'Track out-for-delivery orders' },
     { href: '/admin/slots', label: 'Delivery Slots', icon: Clock, desc: 'Configure time slots' },
+    { href: '/admin/settings', label: 'Admin Settings', icon: Settings, desc: 'Update profile and password' },
   ];
 
   return (

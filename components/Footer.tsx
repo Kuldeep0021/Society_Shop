@@ -13,9 +13,11 @@ export default function Footer() {
           <p className="text-sm text-muted-foreground text-center">
             Your neighbourhood store, delivered to your doorstep.
           </p>
-          <div className="flex gap-4 text-sm text-muted-foreground">
+          <div className="flex gap-4 text-sm text-muted-foreground flex-wrap justify-center">
             <Link href="/" className="hover:text-foreground">Home</Link>
-            <Link href="/orders" className="hover:text-foreground">Orders</Link>
+            <Link href="/about" className="hover:text-foreground">About</Link>
+            <Link href="/contact" className="hover:text-foreground">Contact</Link>
+            <Link href="/terms" className="hover:text-foreground">Terms</Link>
             <Link href="/login" className="hover:text-foreground">Login</Link>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, Minus, Plus, ShoppingCart, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, ShoppingCart, ChevronRight, Heart, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,11 +21,27 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  
+  // Dummy reviews state
+  const [reviews, setReviews] = useState([
+    { id: 1, user: 'Rahul K.', rating: 5, comment: 'Great product, fresh as always!' },
+    { id: 2, user: 'Sneha M.', rating: 4, comment: 'Good quality, fast delivery.' }
+  ]);
+  const [newReview, setNewReview] = useState('');
 
   useEffect(() => {
     if (!id) return;
     getProduct(id)
-      .then(setProduct)
+      .then(p => {
+        setProduct(p);
+        // Check wishlist
+        const saved = localStorage.getItem('wishlist');
+        if (saved && p) {
+          const list = JSON.parse(saved);
+          setIsWishlisted(list.some((item: any) => item.id === p.id));
+        }
+      })
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -39,6 +55,29 @@ export default function ProductDetailPage() {
     if (!product || !product.inStock) return;
     addItem(product, qty);
     router.push('/cart');
+  };
+
+  const toggleWishlist = () => {
+    if (!product) return;
+    const saved = localStorage.getItem('wishlist');
+    let list = saved ? JSON.parse(saved) : [];
+    
+    if (isWishlisted) {
+      list = list.filter((item: any) => item.id !== product.id);
+      toast.success('Removed from wishlist');
+    } else {
+      list.push(product);
+      toast.success('Added to wishlist');
+    }
+    localStorage.setItem('wishlist', JSON.stringify(list));
+    setIsWishlisted(!isWishlisted);
+  };
+
+  const submitReview = () => {
+    if (!newReview.trim()) return;
+    setReviews([{ id: Date.now(), user: 'You', rating: 5, comment: newReview }, ...reviews]);
+    setNewReview('');
+    toast.success('Review submitted!');
   };
 
   if (loading) {
@@ -145,18 +184,67 @@ export default function ProductDetailPage() {
               onClick={handleAddToCart}
               disabled={!product.inStock}
               variant="outline"
-              className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+              className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 flex-1"
             >
               <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
             </Button>
             <Button
               onClick={handleBuyNow}
               disabled={!product.inStock}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-emerald-600 hover:bg-emerald-700 flex-1"
             >
               Buy Now
             </Button>
+            <Button
+              onClick={toggleWishlist}
+              variant="outline"
+              className="px-3"
+            >
+              <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
+            </Button>
           </div>
+        </div>
+      </div>
+      
+      {/* Reviews Section */}
+      <div className="mt-16 max-w-4xl border-t pt-8">
+        <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
+        
+        {/* Add Review */}
+        <Card className="p-4 mb-8 bg-muted/30">
+          <h3 className="font-medium mb-3">Write a review</h3>
+          <div className="flex gap-1 mb-3">
+            {[1,2,3,4,5].map(i => <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400 cursor-pointer" />)}
+          </div>
+          <textarea 
+            className="w-full p-3 border rounded-md resize-none mb-3" 
+            rows={3} 
+            placeholder="Share your thoughts about this product..."
+            value={newReview}
+            onChange={(e) => setNewReview(e.target.value)}
+          ></textarea>
+          <Button onClick={submitReview} className="bg-emerald-600 hover:bg-emerald-700">Submit Review</Button>
+        </Card>
+        
+        {/* Review List */}
+        <div className="space-y-4">
+          {reviews.map(review => (
+            <div key={review.id} className="border-b pb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-emerald-700">
+                  {review.user[0]}
+                </div>
+                <span className="font-medium">{review.user}</span>
+                <span className="text-muted-foreground text-sm ml-auto">Just now</span>
+              </div>
+              <div className="flex gap-1 mb-2">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className={`h-4 w-4 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                ))}
+              </div>
+              <p className="text-muted-foreground">{review.comment}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

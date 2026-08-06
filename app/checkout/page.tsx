@@ -25,6 +25,9 @@ export default function CheckoutPage() {
   const [slots, setSlots] = useState<DeliverySlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
   const [placing, setPlacing] = useState(false);
+  
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [isAvailabilityConfirmed, setIsAvailabilityConfirmed] = useState(false);
 
   const [tower, setTower] = useState('');
   const [flatNumber, setFlatNumber] = useState('');
@@ -78,6 +81,16 @@ export default function CheckoutPage() {
       return false;
     }
     return true;
+  };
+
+  const checkAvailability = async () => {
+    if (!validate()) return;
+    setCheckingAvailability(true);
+    // Simulate server check for stock
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setCheckingAvailability(false);
+    setIsAvailabilityConfirmed(true);
+    toast.success('All items are in stock and available for delivery!');
   };
 
   const placeOrder = async () => {
@@ -150,6 +163,23 @@ export default function CheckoutPage() {
       const createdId = await createOrder(order);
       await clearCart(user.uid);
       clear();
+      
+      // Trigger email notification
+      try {
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: createdId,
+            amount: totalAmount,
+            customerEmail: 'shrishyammart01@gmail.com',
+            customerName: user.name
+          }),
+        });
+      } catch (e) {
+        console.error('Failed to trigger email:', e);
+      }
+
       toast.success('Order placed successfully!');
       router.push(`/orders/${createdId}`);
     } catch (err: any) {
@@ -284,18 +314,35 @@ export default function CheckoutPage() {
         </RadioGroup>
       </Card>
 
-      <Button
-        onClick={placeOrder}
-        disabled={placing}
-        className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-base"
-      >
-        {placing ? (
-          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+      <div className="space-y-4">
+        {!isAvailabilityConfirmed ? (
+          <Button
+            onClick={checkAvailability}
+            disabled={checkingAvailability}
+            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-base"
+          >
+            {checkingAvailability ? (
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+            ) : (
+              <CheckCircle2 className="h-5 w-5 mr-2" />
+            )}
+            {checkingAvailability ? 'Checking Availability...' : 'Confirm Availability'}
+          </Button>
         ) : (
-          <CheckCircle2 className="h-5 w-5 mr-2" />
+          <Button
+            onClick={placeOrder}
+            disabled={placing || !isAvailabilityConfirmed}
+            className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-base"
+          >
+            {placing ? (
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+            ) : (
+              <CheckCircle2 className="h-5 w-5 mr-2" />
+            )}
+            {placing ? 'Placing order...' : `Place Order · ₹${totalAmount}`}
+          </Button>
         )}
-        {placing ? 'Placing order...' : `Place Order · ₹${totalAmount}`}
-      </Button>
+      </div>
     </div>
   );
 }

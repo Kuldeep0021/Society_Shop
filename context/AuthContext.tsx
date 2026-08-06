@@ -80,11 +80,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sendOtp = useCallback(async (phone: string) => {
     if (isFirebaseConfigured && auth) {
-      // Create invisible reCAPTCHA verifier.
-      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-      });
-      setRecaptcha(verifier);
+      let verifier = (window as any).recaptchaVerifier;
+      if (!verifier) {
+        verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+        });
+        (window as any).recaptchaVerifier = verifier;
+      }
       const result = await signInWithPhoneNumber(auth, phone, verifier);
       setConfirmationResult(result);
       setPendingPhone(phone);

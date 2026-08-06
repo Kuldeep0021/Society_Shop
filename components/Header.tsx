@@ -1,8 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ShoppingBasket, ShoppingCart, User, LayoutDashboard, LogOut } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { ShoppingBasket, ShoppingCart, User, LayoutDashboard, LogOut, Search } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -17,18 +18,41 @@ import {
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { totalItems } = useCart();
   const { user, isAdmin, logout } = useAuth();
+  
+  const [searchQuery, setSearchQuery] = useState('');
 
   const isAdminPage = pathname?.startsWith('/admin');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg">
+        <Link href="/" className="flex items-center gap-2 font-bold text-lg mr-4">
           <ShoppingBasket className="h-6 w-6 text-emerald-600" />
           <span className="hidden sm:inline">Society Store</span>
         </Link>
+        
+        {!isAdminPage && (
+          <form onSubmit={handleSearch} className="hidden md:flex items-center flex-1 max-w-md mx-4 relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </form>
+        )}
 
         <nav className="flex items-center gap-1 sm:gap-2">
           {isAdminPage && (
@@ -76,6 +100,9 @@ export default function Header() {
                 )}
                 <DropdownMenuItem asChild>
                   <Link href="/orders">My Orders</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">My Profile</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => logout()}>

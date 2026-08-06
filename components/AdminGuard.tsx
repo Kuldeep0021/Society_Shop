@@ -24,7 +24,7 @@ export default function AdminGuard({ children }: { children: ReactNode }) {
         <h1 className="text-2xl font-bold mt-4">Admin Login Required</h1>
         <p className="text-muted-foreground mt-2">Please login with an admin account.</p>
         <Button asChild className="mt-6 bg-emerald-600 hover:bg-emerald-700">
-          <Link href="/login">Login</Link>
+          <Link href="/admin/login">Login</Link>
         </Button>
       </div>
     );
