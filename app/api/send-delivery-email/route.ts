@@ -1,25 +1,9 @@
-// SendGrid delivery email API route.
-// Called when an order status changes to "delivered".
-// Fetches the user's email from Firestore (users/{userId}) and sends a
-// friendly order-delivered email via SendGrid.
-//
-// CONFIG: Set SENDGRID_API_KEY and SENDGRID_FROM_EMAIL in `.env.local`.
-//   SENDGRID_API_KEY=SG.xxxxxxxxxxxxx
-//   SENDGRID_FROM_EMAIL=orders@yourstore.com
-//
-// For server-side Firestore access (reading the order + user email):
-//   FIREBASE_CLIENT_EMAIL=
-//   FIREBASE_PRIVATE_KEY=
-//
-// This same logic can be deployed as a Firebase Cloud Function.
-// See functions/sendDeliveryEmail.js for the Cloud Functions version.
-
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
-import { adminDb, isAdminConfigured } from '@/lib/firebase-admin';
-import * as demo from '@/lib/store';
+import connectToDatabase from '@/lib/mongodb';
+import Order from '@/models/Order';
+import User from '@/models/User';
 
-// CONFIG: Set these in `.env.local`
 const SMTP_EMAIL = process.env.SMTP_EMAIL;
 const SMTP_PASSWORD = process.env.SMTP_PASSWORD;
 
@@ -29,7 +13,7 @@ const transporter = isSmtpConfigured
       service: 'gmail',
       auth: {
         user: SMTP_EMAIL,
-        pass: SMTP_PASSWORD?.replace(/ /g, ''), // Ensure no spaces in app password
+        pass: SMTP_PASSWORD?.replace(/ /g, ''),
       },
     })
   : null;
@@ -42,32 +26,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'orderId is required' }, { status: 400 });
     }
 
-    // Fetch order (Firestore Admin or demo store).
-    let order: any;
-    if (isAdminConfigured && adminDb) {
-      const snap = await adminDb.collection('orders').doc(orderId).get();
-      if (!snap.exists) {
-        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-      }
-      order = { id: snap.id, ...snap.data() };
-    } else {
-      order = demo.demoGetOrder(orderId);
-      if (!order) {
-        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-      }
+    await connectToDatabase();
+
+    // Fetch order
+    const order = await Order.findById(orderId).lean();
+    if (!order) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    // Fetch user email from users/{userId}.
-    let userEmail: string | undefined;
-    if (isAdminConfigured && adminDb) {
-      const userSnap = await adminDb.collection('users').doc(order.userId).get();
-      if (userSnap.exists) {
-        userEmail = (userSnap.data() as any).email;
-      }
-    } else {
-      const user = demo.demoGetUser();
-      userEmail = user?.email || undefined;
-    }
+    // Fetch user
+    const user = await User.findById(order.userId).lean();
+    const userEmail = user?.email;
 
     if (!userEmail) {
       return NextResponse.json({
@@ -99,10 +68,8 @@ export async function POST(req: NextRequest) {
       </div>
     `;
 
-    // Demo mode: log instead of sending.
     if (!isSmtpConfigured || !transporter) {
       console.log('[DEMO] Delivery email would be sent to:', userEmail);
-      console.log('[DEMO] Email subject: Order Delivered — Society General Store');
       return NextResponse.json({
         success: true,
         demo: true,
@@ -112,8 +79,8 @@ export async function POST(req: NextRequest) {
 
     await transporter.sendMail({
       to: userEmail,
-      from: `"Society General Store" <${SMTP_EMAIL}>`,
-      subject: `Order Delivered — Society General Store (#${String(orderId).slice(-8)})`,
+      from: \`"Society General Store" <\${SMTP_EMAIL}>\`,
+      subject: \`Order Delivered — Society General Store (#\${String(orderId).slice(-8)})\`,
       html,
     });
 
