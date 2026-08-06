@@ -52,8 +52,5 @@ const OrderSchema = new Schema<IOrder>(
 OrderSchema.virtual('id').get(function () {
   return this._id.toHexString();
 });
-OrderSchema.virtual('createdAt').get(function () {
-  return new Date(this.get('createdAt')).getTime();
-});
 
 export default mongoose.models.Order || mongoose.model<IOrder>('Order', OrderSchema);
