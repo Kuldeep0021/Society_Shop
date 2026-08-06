@@ -79,8 +79,8 @@ export async function POST(req: NextRequest) {
 
     await transporter.sendMail({
       to: userEmail,
-      from: \`"Society General Store" <\${SMTP_EMAIL}>\`,
-      subject: \`Order Delivered — Society General Store (#\${String(orderId).slice(-8)})\`,
+      from: `"Society General Store" <${SMTP_EMAIL}>`,
+      subject: `Order Delivered — Society General Store (#${String(orderId).slice(-8)})`,
       html,
     });
 
