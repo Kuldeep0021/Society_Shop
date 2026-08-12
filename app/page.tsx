@@ -10,13 +10,7 @@ import ProductCard from '@/components/ProductCard';
 import { getProducts } from '@/lib/data';
 import { CATEGORIES, Product, Category } from '@/lib/types';
 
-// Dynamically import the 3D background (client-only, no SSR).
-const ThreeBackground = dynamic(() => import('@/components/ThreeBackground'), {
-  ssr: false,
-  loading: () => (
-    <div className="absolute inset-0 -z-10 bg-gradient-to-b from-emerald-50 via-emerald-50/50 to-transparent" />
-  ),
-});
+// 3D background completely removed for performance
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -43,7 +37,7 @@ export default function Home() {
 
   return (
     <div className="relative">
-      <ThreeBackground />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-emerald-50 via-emerald-50/50 to-transparent" />
 
       {/* Hero section */}
       <section className="container mx-auto px-4 pt-12 pb-8 text-center relative">

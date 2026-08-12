@@ -4,7 +4,7 @@
 import { Product, CartItem, Order, OrderStatus, DeliverySlot } from './types';
 import * as demo from './store';
 
-const isDemo = false; // Set to true if you want to force local demo mode without MongoDB
+const isDemo = true; // Set to true if you want to force local demo mode without MongoDB
 
 // Helper for API calls
 async function fetchAPI(endpoint: string, options?: RequestInit) {

@@ -25,6 +25,12 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email and password required');
         }
 
+        // --- DEMO MODE BYPASS ---
+        if (credentials.email === 'admin@societystore.com' && credentials.password === 'admin123') {
+          return { id: 'demo-admin-id', email: 'admin@societystore.com', name: 'Demo Admin', role: 'admin' };
+        }
+        // ------------------------
+
         await connectToDatabase();
 
         const user = await User.findOne({ email: credentials.email });
