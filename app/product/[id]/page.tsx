@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getProduct } from '@/lib/data';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
+import { useAuth } from '@/context/AuthContext';
 import { Product } from '@/lib/types';
 import { toast } from 'sonner';
 
@@ -18,28 +20,28 @@ export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { addItem } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const { user } = useAuth();
+  
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   
-  // Dummy reviews state
-  const [reviews, setReviews] = useState([
-    { id: 1, user: 'Rahul K.', rating: 5, comment: 'Great product, fresh as always!' },
-    { id: 2, user: 'Sneha M.', rating: 4, comment: 'Good quality, fast delivery.' }
-  ]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [newReview, setNewReview] = useState('');
+  const [rating, setRating] = useState(5);
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    getProduct(id)
-      .then(p => {
+    Promise.all([
+      getProduct(id),
+      fetch(`/api/reviews?productId=${id}`).then(res => res.json())
+    ])
+      .then(([p, rData]) => {
         setProduct(p);
-        // Check wishlist
-        const saved = localStorage.getItem('wishlist');
-        if (saved && p) {
-          const list = JSON.parse(saved);
-          setIsWishlisted(list.some((item: any) => item.id === p.id));
+        if (rData.reviews) {
+          setReviews(rData.reviews);
         }
       })
       .finally(() => setLoading(false));
@@ -57,27 +59,41 @@ export default function ProductDetailPage() {
     router.push('/cart');
   };
 
-  const toggleWishlist = () => {
+  const handleToggleWishlist = () => {
     if (!product) return;
-    const saved = localStorage.getItem('wishlist');
-    let list = saved ? JSON.parse(saved) : [];
-    
-    if (isWishlisted) {
-      list = list.filter((item: any) => item.id !== product.id);
-      toast.success('Removed from wishlist');
-    } else {
-      list.push(product);
-      toast.success('Added to wishlist');
-    }
-    localStorage.setItem('wishlist', JSON.stringify(list));
-    setIsWishlisted(!isWishlisted);
+    toggleWishlist(product.id);
   };
 
-  const submitReview = () => {
+  const submitReview = async () => {
+    if (!user) {
+      toast.error('Please login to review');
+      return;
+    }
     if (!newReview.trim()) return;
-    setReviews([{ id: Date.now(), user: 'You', rating: 5, comment: newReview }, ...reviews]);
-    setNewReview('');
-    toast.success('Review submitted!');
+    
+    setSubmittingReview(true);
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: product!.id,
+          rating,
+          comment: newReview
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      setReviews([data.review, ...reviews]);
+      setNewReview('');
+      setRating(5);
+      toast.success('Review submitted!');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   if (loading) {
@@ -196,11 +212,11 @@ export default function ProductDetailPage() {
               Buy Now
             </Button>
             <Button
-              onClick={toggleWishlist}
+              onClick={handleToggleWishlist}
               variant="outline"
               className="px-3"
             >
-              <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
+              <Heart className={`h-5 w-5 ${product && isInWishlist(product.id) ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
             </Button>
           </div>
         </div>
@@ -211,31 +227,50 @@ export default function ProductDetailPage() {
         <h2 className="text-2xl font-bold mb-6">Customer Reviews</h2>
         
         {/* Add Review */}
-        <Card className="p-4 mb-8 bg-muted/30">
-          <h3 className="font-medium mb-3">Write a review</h3>
-          <div className="flex gap-1 mb-3">
-            {[1,2,3,4,5].map(i => <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400 cursor-pointer" />)}
-          </div>
-          <textarea 
-            className="w-full p-3 border rounded-md resize-none mb-3" 
-            rows={3} 
-            placeholder="Share your thoughts about this product..."
-            value={newReview}
-            onChange={(e) => setNewReview(e.target.value)}
-          ></textarea>
-          <Button onClick={submitReview} className="bg-emerald-600 hover:bg-emerald-700">Submit Review</Button>
-        </Card>
+        {user ? (
+          <Card className="p-4 mb-8 bg-muted/30">
+            <h3 className="font-medium mb-3">Write a review</h3>
+            <div className="flex gap-1 mb-3">
+              {[1,2,3,4,5].map(i => (
+                <Star 
+                  key={i} 
+                  onClick={() => setRating(i)}
+                  className={`h-5 w-5 cursor-pointer ${i <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} 
+                />
+              ))}
+            </div>
+            <textarea 
+              className="w-full p-3 border rounded-md resize-none mb-3" 
+              rows={3} 
+              placeholder="Share your thoughts about this product..."
+              value={newReview}
+              onChange={(e) => setNewReview(e.target.value)}
+            ></textarea>
+            <Button onClick={submitReview} disabled={submittingReview} className="bg-emerald-600 hover:bg-emerald-700">
+              {submittingReview ? 'Submitting...' : 'Submit Review'}
+            </Button>
+          </Card>
+        ) : (
+          <Card className="p-4 mb-8 bg-muted/30 text-center">
+            <p className="text-muted-foreground mb-4">Please log in to write a review for this product.</p>
+            <Button asChild className="bg-emerald-600 hover:bg-emerald-700">
+              <Link href="/login">Login to Review</Link>
+            </Button>
+          </Card>
+        )}
         
         {/* Review List */}
         <div className="space-y-4">
           {reviews.map(review => (
-            <div key={review.id} className="border-b pb-4">
+            <div key={review._id || review.id} className="border-b pb-4">
               <div className="flex items-center gap-2 mb-2">
-                <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-emerald-700">
-                  {review.user[0]}
+                <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center font-bold text-emerald-700 uppercase">
+                  {review.userName?.[0] || review.user?.[0] || 'U'}
                 </div>
-                <span className="font-medium">{review.user}</span>
-                <span className="text-muted-foreground text-sm ml-auto">Just now</span>
+                <span className="font-medium">{review.userName || review.user}</span>
+                <span className="text-muted-foreground text-sm ml-auto">
+                  {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : 'Just now'}
+                </span>
               </div>
               <div className="flex gap-1 mb-2">
                 {[...Array(5)].map((_, i) => (

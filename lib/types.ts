@@ -87,6 +87,8 @@ export interface Order {
   paymentStatus: PaymentStatus;
   deliveryAddress: DeliveryAddress;
   deliverySlot: string;
+  discountCode?: string;
+  discountAmount?: number;
   createdAt: number;
   statusHistory: { status: OrderStatus; timestamp: number }[];
   razorpayOrderId?: string;

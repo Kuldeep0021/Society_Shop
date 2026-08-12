@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, CheckCircle2, Lock, MapPin, Clock, CreditCard, Wallet } from 'lucide-react';
+import { Loader2, CheckCircle2, Lock, MapPin, Clock, CreditCard, Wallet, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,11 @@ export default function CheckoutPage() {
   const [flatNumber, setFlatNumber] = useState('');
   const [slot, setSlot] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
+  
+  const [promoCode, setPromoCode] = useState('');
+  const [applyingPromo, setApplyingPromo] = useState(false);
+  const [discountData, setDiscountData] = useState<{ amount: number; code: string } | null>(null);
+  const [discountError, setDiscountError] = useState('');
 
   useEffect(() => {
     getSlots()
@@ -93,6 +98,31 @@ export default function CheckoutPage() {
     toast.success('All items are in stock and available for delivery!');
   };
 
+  const applyPromoCode = async () => {
+    if (!promoCode.trim()) return;
+    setApplyingPromo(true);
+    setDiscountError('');
+    try {
+      const res = await fetch('/api/discounts/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoCode, orderTotal: totalAmount }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      setDiscountData({ amount: data.discountAmount, code: data.code });
+      toast.success('Promo code applied!');
+    } catch (err: any) {
+      setDiscountError(err.message || 'Invalid promo code');
+      setDiscountData(null);
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+  
+  const finalAmount = totalAmount - (discountData?.amount || 0);
+
   const placeOrder = async () => {
     if (!validate() || !user) return;
     setPlacing(true);
@@ -108,6 +138,8 @@ export default function CheckoutPage() {
         paymentStatus: 'unpaid',
         deliveryAddress: { tower, flatNumber: flatNumber.trim() },
         deliverySlot: slot,
+        discountCode: discountData?.code,
+        discountAmount: discountData?.amount,
         createdAt: Date.now(),
         statusHistory: [{ status: 'pending', timestamp: Date.now() }],
         customerPhone: user.phone,
@@ -118,7 +150,7 @@ export default function CheckoutPage() {
         const res = await fetch('/api/create-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: totalAmount, orderId: order.id }),
+          body: JSON.stringify({ amount: finalAmount, orderId: order.id }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to create payment order');
@@ -128,7 +160,7 @@ export default function CheckoutPage() {
         // Open Razorpay checkout.
         await new Promise<void>((resolve, reject) => {
           openRazorpayCheckout({
-            amount: totalAmount * 100,
+            amount: finalAmount * 100,
             orderId: data.orderId,
             name: 'Society General Store',
             description: `Order for ${tower}-${flatNumber}`,
@@ -171,7 +203,7 @@ export default function CheckoutPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             orderId: createdId,
-            amount: totalAmount,
+            amount: finalAmount,
             customerEmail: 'shrishyammart01@gmail.com',
             customerName: user.name
           }),
@@ -208,9 +240,53 @@ export default function CheckoutPage() {
             </div>
           ))}
           <div className="border-t pt-2 flex justify-between font-bold">
-            <span>Total</span>
-            <span className="text-emerald-700">₹{totalAmount}</span>
+            <span>Subtotal</span>
+            <span>₹{totalAmount}</span>
           </div>
+          {discountData && (
+            <div className="flex justify-between text-emerald-600 font-medium">
+              <span>Discount ({discountData.code})</span>
+              <span>-₹{discountData.amount}</span>
+            </div>
+          )}
+          <div className="border-t pt-2 flex justify-between font-bold text-lg">
+            <span>Total</span>
+            <span className="text-emerald-700">₹{finalAmount}</span>
+          </div>
+        </div>
+        
+        {/* Promo Code Input */}
+        <div className="mt-4 pt-4 border-t">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Tag className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Promo Code"
+                className="pl-9"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                disabled={!!discountData || applyingPromo}
+              />
+            </div>
+            {discountData ? (
+              <Button 
+                variant="outline" 
+                onClick={() => { setDiscountData(null); setPromoCode(''); }}
+                className="text-red-500 hover:text-red-600 border-red-200 bg-red-50"
+              >
+                Remove
+              </Button>
+            ) : (
+              <Button 
+                onClick={applyPromoCode} 
+                disabled={applyingPromo || !promoCode}
+                className="bg-slate-800"
+              >
+                {applyingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+              </Button>
+            )}
+          </div>
+          {discountError && <p className="text-sm text-red-500 mt-2">{discountError}</p>}
         </div>
       </Card>
 
@@ -339,7 +415,7 @@ export default function CheckoutPage() {
             ) : (
               <CheckCircle2 className="h-5 w-5 mr-2" />
             )}
-            {placing ? 'Placing order...' : `Place Order · ₹${totalAmount}`}
+            {placing ? 'Placing order...' : `Place Order · ₹${finalAmount}`}
           </Button>
         )}
       </div>

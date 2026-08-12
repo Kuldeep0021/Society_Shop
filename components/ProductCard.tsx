@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus } from 'lucide-react';
+import { Plus, Heart } from 'lucide-react';
 import { Product } from '@/lib/types';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,9 @@ import { toast } from 'sonner';
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  
+  const isWished = isInWishlist(product.id);
 
   const handleAdd = () => {
     if (!product.inStock) {
@@ -40,6 +44,13 @@ export default function ProductCard({ product }: { product: Product }) {
           </Badge>
         </div>
       </Link>
+      <button
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(product.id); }}
+        className="absolute top-2 right-2 p-2 bg-white/80 backdrop-blur rounded-full text-muted-foreground hover:text-red-500 transition-colors z-10"
+        aria-label="Toggle wishlist"
+      >
+        <Heart className={`h-4 w-4 ${isWished ? 'fill-red-500 text-red-500' : ''}`} />
+      </button>
       <div className="p-3">
         <Link href={`/product/${product.id}`}>
           <h3 className="font-medium text-sm line-clamp-2 min-h-[2.5rem] hover:text-emerald-700 transition-colors">

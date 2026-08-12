@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ShoppingBasket, ShoppingCart, User, LayoutDashboard, LogOut, Search } from 'lucide-react';
+import { ShoppingBasket, ShoppingCart, User, LayoutDashboard, LogOut, Search, Heart, ListOrdered, Settings } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -62,6 +62,7 @@ export default function Header() {
               <NavLink href="/admin/orders" label="Orders" active={pathname === '/admin/orders'} />
               <NavLink href="/admin/delivery" label="Delivery" active={pathname === '/admin/delivery'} />
               <NavLink href="/admin/slots" label="Slots" active={pathname === '/admin/slots'} />
+              <NavLink href="/admin/discounts" label="Discounts" active={pathname === '/admin/discounts'} />
             </>
           )}
 
@@ -85,12 +86,12 @@ export default function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium">{user.name}</span>
-                    <span className="text-xs text-muted-foreground">{user.phone}</span>
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium">{user.name}</p>
+                    <p className="text-sm text-muted-foreground">{user.email}</p>
                   </div>
-                </DropdownMenuLabel>
+                </div>
                 <DropdownMenuSeparator />
                 {isAdmin && (
                   <DropdownMenuItem asChild>
@@ -100,10 +101,19 @@ export default function Header() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
-                  <Link href="/orders">My Orders</Link>
+                  <Link href="/orders">
+                    <ListOrdered className="mr-2 h-4 w-4" /> My Orders
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/profile">My Profile</Link>
+                  <Link href="/wishlist">
+                    <Heart className="mr-2 h-4 w-4" /> My Wishlist
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">
+                    <Settings className="mr-2 h-4 w-4" /> My Profile
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => logout()}>
