@@ -59,6 +59,7 @@
     "eslint-config-next": "13.5.1",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.446.0",
+    "maath": "^0.10.8",
     "mongoose": "^9.9.1",
     "next": "13.5.1",
     "next-auth": "^4.24.15",

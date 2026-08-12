@@ -25,12 +25,6 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email and password required');
         }
 
-        // --- DEMO MODE BYPASS ---
-        if (credentials.email === 'admin@societystore.com' && credentials.password === 'admin123') {
-          return { id: 'demo-admin-id', email: 'admin@societystore.com', name: 'Demo Admin', role: 'admin' };
-        }
-        // ------------------------
-
         await connectToDatabase();
 
         const user = await User.findOne({ email: credentials.email });
@@ -41,25 +35,17 @@ export const authOptions: NextAuthOptions = {
             throw new Error('Email already exists');
           }
           const hashedPassword = await bcrypt.hash(credentials.password, 10);
+          
+          // First user registers as admin automatically if env var specifies it, otherwise customer.
+          const isFirstAdmin = process.env.ADMIN_EMAIL && credentials.email === process.env.ADMIN_EMAIL;
+          
           const newUser = await User.create({
             email: credentials.email,
             password: hashedPassword,
             name: credentials.name || 'Customer',
-            role: 'customer'
+            role: isFirstAdmin ? 'admin' : 'customer'
           });
           return { id: newUser._id.toString(), email: newUser.email, name: newUser.name, role: newUser.role };
-        }
-
-        // Seeding the initial admin if it doesn't exist and they try to login with admin/admin123
-        if (!user && credentials.email === 'admin@societystore.com' && credentials.password === 'admin123') {
-           const hashedPassword = await bcrypt.hash('admin123', 10);
-           const newAdmin = await User.create({
-             email: 'admin@societystore.com',
-             password: hashedPassword,
-             name: 'Store Admin',
-             role: 'admin'
-           });
-           return { id: newAdmin._id.toString(), email: newAdmin.email, name: newAdmin.name, role: newAdmin.role };
         }
 
         // Login logic
@@ -84,11 +70,12 @@ export const authOptions: NextAuthOptions = {
         await connectToDatabase();
         const existingUser = await User.findOne({ email: user.email });
         if (!existingUser) {
+          const isFirstAdmin = process.env.ADMIN_EMAIL && user.email === process.env.ADMIN_EMAIL;
           await User.create({
             email: user.email,
             name: user.name,
             image: user.image,
-            role: 'customer'
+            role: isFirstAdmin ? 'admin' : 'customer'
           });
         }
       }

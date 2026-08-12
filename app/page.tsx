@@ -9,9 +9,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ProductCard from '@/components/ProductCard';
 import { getProducts } from '@/lib/data';
 import { CATEGORIES, Product, Category } from '@/lib/types';
+import Background3D from '@/components/Background3D';
 
-// 3D background completely removed for performance
-
+// 3D background restored and optimized
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,8 +36,9 @@ export default function Home() {
   }, [products, search, category]);
 
   return (
-    <div className="relative">
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-emerald-50 via-emerald-50/50 to-transparent" />
+    <div className="relative min-h-screen overflow-hidden">
+      <Background3D />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-emerald-50/80 via-emerald-50/50 to-transparent backdrop-blur-[2px]" />
 
       {/* Hero section */}
       <section className="container mx-auto px-4 pt-12 pb-8 text-center relative">
