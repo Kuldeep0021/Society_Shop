@@ -1,34 +1,27 @@
 'use client';
 
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Stars } from '@react-three/drei';
-import { useRef } from 'react';
-import * as THREE from 'three';
+import { Sparkles, Float } from '@react-three/drei';
 
-function RotatingStars() {
-  const ref = useRef<THREE.Group>(null);
-  
-  useFrame((state, delta) => {
-    if (ref.current) {
-      ref.current.rotation.x -= delta / 20;
-      ref.current.rotation.y -= delta / 30;
-    }
-  });
-
+function FloatingOrbs() {
   return (
-    <group ref={ref}>
-      <Stars radius={50} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
-    </group>
+    <>
+      <Float speed={2} rotationIntensity={1} floatIntensity={2}>
+        <Sparkles count={150} scale={12} size={6} speed={0.4} opacity={0.6} color="#34d399" />
+      </Float>
+      <Float speed={1.5} rotationIntensity={2} floatIntensity={1.5}>
+        <Sparkles count={100} scale={15} size={8} speed={0.2} opacity={0.3} color="#10b981" />
+      </Float>
+    </>
   );
 }
 
 export default function Background3D() {
   return (
-    <div className="absolute inset-0 -z-20 w-full h-full opacity-70 pointer-events-none bg-[#022c22]">
-      <Canvas camera={{ position: [0, 0, 1] }}>
-        <color attach="background" args={['#022c22']} />
-        <ambientLight intensity={0.5} />
-        <RotatingStars />
+    <div className="absolute inset-0 -z-20 w-full h-full pointer-events-none bg-emerald-950">
+      <Canvas camera={{ position: [0, 0, 10] }}>
+        <ambientLight intensity={1} />
+        <FloatingOrbs />
       </Canvas>
     </div>
   );
