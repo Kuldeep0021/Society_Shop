@@ -79,8 +79,9 @@ export default function Header() {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Account">
-                  <User className="h-5 w-5" />
+                <Button variant="outline" className="flex items-center gap-2 rounded-full border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 hover:text-emerald-950">
+                  <User className="h-4 w-4" />
+                  <span className="text-sm font-medium hidden sm:inline-block">{user.name}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

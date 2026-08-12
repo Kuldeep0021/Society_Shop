@@ -9,7 +9,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ProductCard from '@/components/ProductCard';
 import { getProducts } from '@/lib/data';
 import { CATEGORIES, Product, Category } from '@/lib/types';
-import Background3D from '@/components/Background3D';
+import dynamic from 'next/dynamic';
+
+const Background3D = dynamic(() => import('@/components/Background3D'), { ssr: false });
 
 // 3D background restored and optimized
 export default function Home() {
@@ -38,15 +40,15 @@ export default function Home() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <Background3D />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-emerald-50/80 via-emerald-50/50 to-transparent backdrop-blur-[2px]" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/40 via-transparent to-transparent pointer-events-none" />
 
       {/* Hero section */}
-      <section className="container mx-auto px-4 pt-12 pb-8 text-center relative">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+      <section className="container mx-auto px-4 pt-12 pb-8 text-center relative z-10">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white drop-shadow-md">
           Your Society Store,
-          <span className="block text-emerald-600">Delivered to Your Door</span>
+          <span className="block text-emerald-400">Delivered to Your Door</span>
         </h1>
-        <p className="mt-4 text-muted-foreground max-w-xl mx-auto text-sm sm:text-base">
+        <p className="mt-4 text-emerald-50 max-w-xl mx-auto text-sm sm:text-base drop-shadow">
           Daily essentials, groceries, and household items from the general store right inside your residential society. Order in minutes.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3 text-sm">
