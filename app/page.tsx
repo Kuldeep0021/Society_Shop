@@ -9,7 +9,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ProductCard from '@/components/ProductCard';
 import { getProducts } from '@/lib/data';
 import { CATEGORIES, Product, Category } from '@/lib/types';
-import dynamic from 'next/dynamic';
 
 const Background3D = dynamic(() => import('@/components/Background3D'), { ssr: false });
 
